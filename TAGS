@@ -53,7 +53,7 @@ sprintputch(int ch, struct sprintbuf *b)sprintputch263,5513
 vsnprintf(char *buf, int n, const char *fmt, va_list ap)vsnprintf271,5615
 snprintf(char *buf, int n, const char *fmt, ...)snprintf288,5913
 
-inc/memlayout.h,915
+inc/memlayout.h,1029
 #define JOS_INC_MEMLAYOUT_HJOS_INC_MEMLAYOUT_H2,28
 #define GD_KT GD_KT15,324
 #define GD_KD GD_KD16,366
@@ -81,6 +81,9 @@ inc/memlayout.h,915
 #define USTABDATA	USTABDATA139,6265
 typedef uint32_t pte_t;pte_t143,6320
 typedef uint32_t pde_t;pde_t144,6344
+struct PageInfo {PageInfo175,7643
+	struct PageInfo *pp_link;pp_link177,7693
+	uint16_t pp_ref;pp_ref184,7951
 
 inc/stab.h,1187
 #define JOS_STAB_HJOS_STAB_H2,19
@@ -502,30 +505,30 @@ readsect(void *dst, uint32_t offset)readsect107,2928
 
 boot/boot.S,108
 start:start13,454
-protcseg:protcseg58,1980
-spin:spin72,2494
-gdt:gdt77,2595
-gdtdesc:gdtdesc82,2722
+protcseg:protcseg58,1983
+spin:spin72,2497
+gdt:gdt77,2598
+gdtdesc:gdtdesc82,2757
 
 obj/boot/boot.asm,729
 Disassembly of section .text:Disassembly5,49
 start:start11,174
-protcseg:protcseg84,2890
-spin:spin108,3818
-voidvoid132,4393
-static inline uint8_tstatic137,4460
-voidvoid157,5073
-static inline voidstatic169,5409
-	offset = (offset / SECTSIZE) + 1;offset226,7580
-	end_pa = pa + count;end_pa230,7716
-	offset = (offset / SECTSIZE) + 1;offset234,7848
-	end_pa = pa + count;end_pa236,7932
-	offset = (offset / SECTSIZE) + 1;offset238,8003
-	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);ph282,9728
-	eph = ph + ELFHDR->e_phnum;eph284,9845
-	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);ph286,9926
-	eph = ph + ELFHDR->e_phnum;eph288,10049
-static inline voidstatic309,10908
+protcseg:protcseg84,2893
+spin:spin108,3821
+voidvoid132,4396
+static inline uint8_tstatic137,4463
+voidvoid157,5076
+static inline voidstatic169,5412
+	offset = (offset / SECTSIZE) + 1;offset226,7583
+	end_pa = pa + count;end_pa230,7719
+	offset = (offset / SECTSIZE) + 1;offset234,7851
+	end_pa = pa + count;end_pa236,7935
+	offset = (offset / SECTSIZE) + 1;offset238,8006
+	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);ph282,9731
+	eph = ph + ELFHDR->e_phnum;eph284,9848
+	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);ph286,9929
+	eph = ph + ELFHDR->e_phnum;eph288,10052
+static inline voidstatic309,10911
 
 obj/kern/kernel.asm,174873
 Disassembly of section .text:Disassembly5,47
@@ -3083,8 +3086,8 @@ conf/env.mk,14
 V = @V9,359
 
 conf/lab.mk,71
-LAB=1LAB1,0
-PACKAGEDATE=Thu Aug 30 15:16:04 EDT 2018PACKAGEDATE2,6
+LAB=2LAB1,0
+PACKAGEDATE=Wed Sep 12 14:51:29 EDT 2018PACKAGEDATE2,6
 
 kern/console.h,275
 #define _CONSOLE_H__CONSOLE_H_4,68
@@ -3095,6 +3098,10 @@ kern/console.h,275
 #define CRT_ROWS	CRT_ROWS16,313
 #define CRT_COLS	CRT_COLS17,333
 #define CRT_SIZE	CRT_SIZE18,353
+
+kern/kclock.c,116
+mc146818_read(unsigned reg)mc146818_read11,169
+mc146818_write(unsigned reg, unsigned datum)mc146818_write18,250
 
 kern/monitor.c,661
 #define CMDBUF_SIZE	CMDBUF_SIZE14,314
@@ -3193,6 +3200,44 @@ pte_t entry_pgtable[NPTENTRIES] = {entry_pgtable33,1329
 kern/monitor.h,51
 #define JOS_KERN_MONITOR_HJOS_KERN_MONITOR_H2,27
 
+kern/pmap.h,397
+#define JOS_KERN_PMAP_HJOS_KERN_PMAP_H4,72
+#define PADDR(PADDR25,645
+_paddr(const char *file, int line, void *kva)_paddr28,722
+#define KADDR(KADDR37,1057
+_kaddr(const char *file, int line, physaddr_t pa)_kaddr40,1127
+	ALLOC_ZERO = 1<<0,ALLOC_ZERO50,1366
+page2pa(struct PageInfo *pp)page2pa66,1815
+pa2page(physaddr_t pa)pa2page72,1913
+page2kva(struct PageInfo *pp)page2kva80,2057
+
+kern/pmap.c,1556
+size_t npages;			// Amount of physical memory (in pages)npages13,262
+static size_t npages_basemem;	// Amount of base memory (in pages)npages_basemem14,319
+pde_t *kern_pgdir;		// Kernel's initial page directorykern_pgdir17,427
+struct PageInfo *pages;		// Physical page state arraypages18,482
+static struct PageInfo *page_free_list;	// Free list of physical pagespage_free_list19,536
+nvram_read(int r)nvram_read27,796
+i386_detect_memory(void)i386_detect_memory33,887
+boot_alloc(uint32_t n)boot_alloc85,2707
+mem_init(void)mem_init119,3753
+page_init(void)page_init235,8304
+page_alloc(int alloc_flags)page_alloc275,9757
+page_free(struct PageInfo *pp)page_free286,9941
+page_decref(struct PageInfo* pp)page_decref298,10188
+pgdir_walk(pde_t *pgdir, const void *va, int create)pgdir_walk327,11324
+boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)boot_map_region345,11872
+page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)page_insert376,12968
+page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)page_lookup394,13492
+page_remove(pde_t *pgdir, void *va)page_remove416,14154
+tlb_invalidate(pde_t *pgdir, void *va)tlb_invalidate426,14351
+check_page_free_list(bool only_low_memory)check_page_free_list442,14784
+check_page_alloc(void)check_page_alloc504,16545
+check_kern_pgdir(void)check_kern_pgdir586,18362
+check_va2pa(pde_t *pgdir, uintptr_t va)check_va2pa634,19617
+check_page(void)check_page650,19898
+check_page_installed_pgdir(void)check_page_installed_pgdir803,24720
+
 kern/entry.S,533
 #define SRL(val, shamt)		(((val) >> (shamt)) & ~(-1 << (32 - (shamt))))SRL7,120
 #define	RELOC(x) ((x) - KERNBASE)RELOC18,566
@@ -3206,21 +3251,40 @@ spin:	jmp	spinspin83,2501
 bootstack:bootstack92,2734
 bootstacktop:bootstacktop95,2788
 
-kern/init.c,256
-test_backtrace(int x)test_backtrace12,228
-i386_init(void)i386_init23,416
-const char *panicstr;panicstr51,1115
-_panic(const char *file, int line, const char *fmt,...)_panic58,1263
-_warn(const char *file, int line, const char *fmt,...)_warn83,1696
+kern/init.c,211
+i386_init(void)i386_init14,227
+const char *panicstr;panicstr42,921
+_panic(const char *file, int line, const char *fmt,...)_panic49,1069
+_warn(const char *file, int line, const char *fmt,...)_warn74,1502
 
 kern/kdebug.c,181
 stab_binsearch(const struct Stab *stabs, int *region_left, int *region_right,stab_binsearch51,1753
 debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)debuginfo_eip105,3021
 
+kern/kclock.h,420
+#define JOS_KERN_KCLOCK_HJOS_KERN_KCLOCK_H4,74
+#define	IO_RTC	IO_RTC9,203
+#define	MC_NVRAM_START	MC_NVRAM_START11,242
+#define	MC_NVRAM_SIZE	MC_NVRAM_SIZE12,301
+#define NVRAM_BASELO	NVRAM_BASELO15,393
+#define NVRAM_BASEHI	NVRAM_BASEHI16,465
+#define NVRAM_EXTLO	NVRAM_EXTLO19,609
+#define NVRAM_EXTHI	NVRAM_EXTHI20,680
+#define NVRAM_EXT16LO	NVRAM_EXT16LO23,826
+#define NVRAM_EXT16HI	NVRAM_EXT16HI24,900
+
 kern/printf.c,136
 putch(int ch, int *cnt)putch10,212
 vcprintf(const char *fmt, va_list ap)vcprintf17,269
 cprintf(const char *fmt, ...)cprintf26,385
+
+grade-lab2,306
+r = Runner(save("jos.out"),r5,47
+def test_jos():test_jos9,140
+def test_check_page_alloc():test_check_page_alloc13,228
+def test_check_page():test_check_page17,352
+def test_check_kern_pgdir():test_check_kern_pgdir21,470
+def test_check_page_installed_pgdir():test_check_page_installed_pgdir25,596
 
 gradelib.py,2816
 __all__ = []__all__7,194
@@ -3284,7 +3348,7 @@ def stop_on_line(regexp):stop_on_line541,16743
 
 .dir-locals.el,0
 
-GNUmakefile,1562
+GNUmakefile,1598
 OBJDIR := objOBJDIR8,197
 LABSETUP ?= ./LABSETUP22,403
 TOP = .TOP24,419
@@ -3292,24 +3356,25 @@ GCCPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/de
 QEMU := $(shell if which qemu >/dev/null 2>&1; \QEMU52,1637
 GDBPORT	:= $(shell expr `id -u` % 5000 + 25000)GDBPORT67,2275
 CC	:= $(GCCPREFIX)gcc -pipeCC69,2324
-AS	:= $(GCCPREFIX)asAS70,2352
-AR	:= $(GCCPREFIX)arAR71,2373
-LD	:= $(GCCPREFIX)ldLD72,2394
-OBJCOPY	:= $(GCCPREFIX)objcopyOBJCOPY73,2415
-OBJDUMP	:= $(GCCPREFIX)objdumpOBJDUMP74,2446
-NM	:= $(GCCPREFIX)nmNM75,2477
-NCC	:= gcc $(CC_VER) -pipeNCC78,2517
-NATIVE_CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -I$(TOP) -MD -WallNATIVE_CFLAGS79,2544
-TAR	:= gtarTAR80,2609
-PERL	:= perlPERL81,2621
-CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O1 -fno-builtin -I$(TOP) -MDCFLAGS86,2808
-LDFLAGS := -m elf_i386LDFLAGS99,3366
-ULDFLAGS := -T user/user.ldULDFLAGS102,3427
-GCC_LIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)GCC_LIB104,3456
-OBJDIRS :=OBJDIRS107,3576
-KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL -gstabsKERN_CFLAGS123,3967
-USER_CFLAGS := $(CFLAGS) -DJOS_USER -gstabsUSER_CFLAGS124,4013
-QEMUOPTS = -drive file=$(OBJDIR)/kern/kernel.img,index=0,media=disk,format=raw -serial mon:stdio -gdb tcp::$(GDBPORT)QEMUOPTS142,4523
-IMAGES = $(OBJDIR)/kern/kernel.imgIMAGES144,4736
-WEBSUB := https://6828.scripts.mit.edu/2018/handin.pyWEBSUB222,6450
-UPSTREAM := $(shell git remote -v | grep "pdos.csail.mit.edu/6.828/2018/jos.git (fetch)" | awk '{split($$0,a," "); print a[1]}')UPSTREAM255,7472
+GDB	:= $(GCCPREFIX)gdbGDB70,2352
+AS	:= $(GCCPREFIX)asAS71,2375
+AR	:= $(GCCPREFIX)arAR72,2396
+LD	:= $(GCCPREFIX)ldLD73,2417
+OBJCOPY	:= $(GCCPREFIX)objcopyOBJCOPY74,2438
+OBJDUMP	:= $(GCCPREFIX)objdumpOBJDUMP75,2469
+NM	:= $(GCCPREFIX)nmNM76,2500
+NCC	:= gcc $(CC_VER) -pipeNCC79,2540
+NATIVE_CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -I$(TOP) -MD -WallNATIVE_CFLAGS80,2567
+TAR	:= gtarTAR81,2632
+PERL	:= perlPERL82,2644
+CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O1 -fno-builtin -I$(TOP) -MDCFLAGS87,2831
+LDFLAGS := -m elf_i386LDFLAGS100,3389
+ULDFLAGS := -T user/user.ldULDFLAGS103,3450
+GCC_LIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)GCC_LIB105,3479
+OBJDIRS :=OBJDIRS108,3599
+KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL -gstabsKERN_CFLAGS124,3990
+USER_CFLAGS := $(CFLAGS) -DJOS_USER -gstabsUSER_CFLAGS125,4036
+QEMUOPTS = -drive file=$(OBJDIR)/kern/kernel.img,index=0,media=disk,format=raw -serial mon:stdio -gdb tcp::$(GDBPORT)QEMUOPTS143,4546
+IMAGES = $(OBJDIR)/kern/kernel.imgIMAGES145,4759
+WEBSUB := https://6828.scripts.mit.edu/2018/handin.pyWEBSUB223,6476
+UPSTREAM := $(shell git remote -v | grep "pdos.csail.mit.edu/6.828/2018/jos.git (fetch)" | awk '{split($$0,a," "); print a[1]}')UPSTREAM256,7498
