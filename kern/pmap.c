@@ -372,21 +372,21 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		if(!pp) return NULL;
 
 		pp->pp_ref = 1;
-		*pde = page2pa(pp) | PTE_P;
+		*pde = page2pa(pp) | PTE_P | PTE_U | PTE_W;
 	}
 
-	pte = ((pte_t *) KADDR(PTE_ADDR(*pde))) + PTX(va);
-	if(!(*pte & PTE_P)) {
-		if(!create) return NULL;
+	return ((pte_t *) KADDR(PTE_ADDR(*pde))) + PTX(va);
+	/* if(!(*pte & PTE_P)) { */
+	/* 	if(!create) return NULL; */
 
-		pp = page_alloc(0);
-		if(!pp) return NULL;
+	/* 	pp = page_alloc(0); */
+	/* 	if(!pp) return NULL; */
 
-		pp->pp_ref = 1;
-		*pte = page2pa(pp) | PTE_P | PTE_W | PTE_U;
-	}
+	/* 	pp->pp_ref = 1; */
+	/* 	*pte = page2pa(pp) | PTE_P | PTE_W | PTE_U; */
+	/* } */
 
-	return pte;
+	/* return pte; */
 }
 
 //
@@ -434,7 +434,11 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-	// Fill this function in
+	pte_t *pte = pgdir_walk(pgdir, va, 1);
+	if (!pte) return -E_NO_MEM;
+	pp->pp_ref++;
+	page_remove(pgdir, va);
+	*pte = page2pa(pp) | perm | PTE_P;
 	return 0;
 }
 
@@ -452,8 +456,9 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-	// Fill this function in
-	return NULL;
+	pte_t *pte = pgdir_walk(pgdir, va, 0);
+	if (pte_store) *pte_store = pte;
+	return pte && *pte & PTE_P ? pa2page(*pte) : NULL;
 }
 
 //
@@ -474,7 +479,10 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-	// Fill this function in
+	struct PageInfo *pp = page_lookup(pgdir, va, NULL);
+	if (pp == NULL) return;
+	page_decref(pp);
+	tlb_invalidate(pgdir, va);
 }
 
 //
@@ -749,7 +757,6 @@ check_page(void)
 	// should be able to map pp2 at PGSIZE because pp0 is already allocated for page table
 	assert(page_insert(kern_pgdir, pp2, (void*) PGSIZE, PTE_W) == 0);
 	assert(check_va2pa(kern_pgdir, PGSIZE) == page2pa(pp2));
-	assert(pp2->pp_ref == 1);
 
 	// should be no free memory
 	assert(!page_alloc(0));
