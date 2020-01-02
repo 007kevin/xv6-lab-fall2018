@@ -482,7 +482,8 @@ page_remove(pde_t *pgdir, void *va)
 	struct PageInfo *pp = page_lookup(pgdir, va, NULL);
 	if (pp == NULL) return;
 	page_decref(pp);
-	tlb_invalidate(pgdir, va);
+	*pgdir_walk(pgdir, va, 0) = 0;
+	if (pp->pp_ref == 0) tlb_invalidate(pgdir, va);
 }
 
 //
