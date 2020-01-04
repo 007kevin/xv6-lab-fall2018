@@ -1,0 +1,11 @@
+1. Assuming that the following JOS kernel code is correct, what type should variable x have, uintptr_t or physaddr_t?
+   #+BEGIN_SRC c
+     mystery_t x;
+     char* value = return_a_pointer();
+     *value = 10;
+     x = (mystery_t) value;   
+   #+END_SRC
+   Answer
+   x should be of type uintptr_t virtual address type since executing code pointers are virtual addresses
+   that are always translated by the MMU
+
