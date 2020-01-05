@@ -8,7 +8,6 @@
 
 #include <kern/pmap.h>
 #include <kern/kclock.h>
-
 // These variables are set by i386_detect_memory()
 size_t npages;			// Amount of physical memory (in pages)
 static size_t npages_basemem;	// Amount of base memory (in pages)
@@ -367,7 +366,6 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	pde_t *pde;
 	pte_t *pte;
 	struct PageInfo *pp;
-
 	pde = pgdir+PDX(va);
 	if(!(*pde & PTE_P)) {
 		if(!create) return NULL;
@@ -378,7 +376,6 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		pp->pp_ref = 1;
 		*pde = page2pa(pp) | PTE_P | PTE_U | PTE_W;
 	}
-
 	return ((pte_t *) KADDR(PTE_ADDR(*pde))) + PTX(va);
 }
 

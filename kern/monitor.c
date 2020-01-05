@@ -10,6 +10,7 @@
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
+#include <kern/pmap.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -24,6 +25,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	{ "showmappings", "Display the physical page mappings and corresponding permission bits that apply to the pages at virtual addresses", mon_showmappings }
 };
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -58,6 +60,30 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
+	return 0;
+}
+
+int mon_showmappings(int argc, char **argv, struct Trapframe *tf)
+{
+	if (argc != 3) {
+		cprintf("expected two arguments.\n");
+		return 1;
+	}
+	uintptr_t start_va = (uintptr_t) ROUNDDOWN(strtol(argv[1], NULL, 16), PGSIZE);
+	uintptr_t end_va = (uintptr_t) ROUNDUP(strtol(argv[2], NULL, 16), PGSIZE);
+	cprintf("Show mappings for aligned virtual address range [%08x, %08x]:\n", start_va, end_va);
+	while (start_va <= end_va){
+		pte_t *pte = pgdir_walk(kern_pgdir,(void *) start_va, 0);
+		if (pte == NULL) {
+			cprintf("  %08x (virt)  unmapped\n", start_va);
+		} else {
+			cprintf("  %08x (virt)  %08x (phys) %03x (perm)\n",
+				start_va,
+				(physaddr_t *) PTE_ADDR(*pte),
+				*pte & 0xFFF);
+		}
+		start_va+=PGSIZE;
+	}
 	return 0;
 }
 
