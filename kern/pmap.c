@@ -159,6 +159,8 @@ mem_init(void)
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
+	envs = (struct Env *) boot_alloc(sizeof(struct Env) * NENV);
+	memset(envs, 0, sizeof(struct Env) * NENV);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -283,7 +285,10 @@ page_init(void)
 			pages[i].pp_ref = 0;
 			pages[i].pp_link = page_free_list;
 			page_free_list = &pages[i];
-		} else if (i < (EXTPHYSMEM/PGSIZE) || i < ((size_t)boot_alloc(0)-KERNBASE) / PGSIZE)  {
+		} else if (i < (EXTPHYSMEM/PGSIZE))  {
+			pages[i].pp_ref = 1;
+			pages[i].pp_link = NULL;
+		} else if (i < ((size_t)boot_alloc(0)-KERNBASE) / PGSIZE) {
 			pages[i].pp_ref = 1;
 			pages[i].pp_link = NULL;
 		} else {

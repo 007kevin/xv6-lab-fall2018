@@ -117,6 +117,13 @@ env_init(void)
 	// Set up envs array
 	// LAB 3: Your code here.
 
+	// in mem_init, we memset env, so env_status
+	// and env_id should already be 0.
+	for (int i = 0; i < NENV-1; ++i)
+		envs[i].env_link = &envs[i+1];
+
+	env_free_list = envs;
+
 	// Per-CPU part of the initialization
 	env_init_percpu();
 }
